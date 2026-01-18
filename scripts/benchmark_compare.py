@@ -2,6 +2,7 @@ import os
 import sys
 import json
 from typing import List, Dict
+from tabulate import tabulate
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
@@ -9,7 +10,6 @@ if ROOT not in sys.path:
 
 from src.eval.benchmark import run_benchmark
 from src.providers import PROVIDERS
-
 
 def run_multi_provider(dataset_path: str, default_db: str, providers: List[str], limit: int = None) -> Dict:
     """Run benchmarks across multiple providers and return aggregated results."""
@@ -30,26 +30,52 @@ def run_multi_provider(dataset_path: str, default_db: str, providers: List[str],
 def generate_markdown_table(results: Dict) -> str:
     if not results:
         return "No results."
-    
-    lines = ["# Benchmark Results\n"]
-    lines.append("Provider | EM | EX | Syntax Err | Logic Err")
-    lines.append("--- | --- | --- | --- | ---")
-    
+
+    headers = ["Provider", "EM", "EX", "Syntax Err", "Logic Err", "Exec Err"]
+    rows = []
     for provider, m in sorted(results.items()):
-        lines.append(f"{provider} | {m['em']:.1%} | {m['ex']:.1%} | {m['syntax_error_rate']:.1%} | {m['logic_error_rate']:.1%}")
-    
-    return "\n".join(lines)
+        rows.append([
+            provider,
+            f"{m['em']:.1%}",
+            f"{m['ex']:.1%}",
+            f"{m['syntax_error_rate']:.1%}",
+            f"{m['logic_error_rate']:.1%}",
+            f"{m['execution_error_rate']:.1%}",
+        ])
+
+    table_md = tabulate(rows, headers=headers, tablefmt="github")
+    return "# Benchmark Results\n\n" + table_md
+
+
+def print_console_table(results: Dict):
+    if not results:
+        print("No results.")
+        return
+    headers = ["Provider", "EM", "EX", "Syntax Err", "Logic Err", "Exec Err"]
+    rows = []
+    for provider, m in sorted(results.items()):
+        rows.append([
+            provider,
+            f"{m['em']:.1%}",
+            f"{m['ex']:.1%}",
+            f"{m['syntax_error_rate']:.1%}",
+            f"{m['logic_error_rate']:.1%}",
+            f"{m['execution_error_rate']:.1%}",
+        ])
+    print(tabulate(rows, headers=headers, tablefmt="fancy_grid"))
 
 
 def generate_csv_table(results: Dict) -> str:
     if not results:
-        return "Provider,EM,EX,SyntaxErr,LogicErr"
+        return "Provider,EM,EX,SyntaxErr,LogicErr,ExecErr"
     
-    lines = ["Provider,EM,EX,SyntaxErr,LogicErr"]
+    lines = ["Provider,EM,EX,SyntaxErr,LogicErr,ExecErr"]
     for provider, m in sorted(results.items()):
-        lines.append(f"{provider},{m['em']:.4f},{m['ex']:.4f},{m['syntax_error_rate']:.4f},{m['logic_error_rate']:.4f}")
+        lines.append(
+            f"{provider},{m['em']:.4f},{m['ex']:.4f},{m['syntax_error_rate']:.4f},"
+            f"{m['logic_error_rate']:.4f},{m['execution_error_rate']:.4f}"
+        )
     return "\n".join(lines)
-
 
 def main():
     import argparse
@@ -72,8 +98,8 @@ def main():
     
     md_table = generate_markdown_table(results)
     csv_table = generate_csv_table(results)
-    
-    print("\n" + md_table)
+
+    print_console_table(results)
     
     if args.output_md:
         os.makedirs(os.path.dirname(args.output_md) or ".", exist_ok=True)

@@ -8,10 +8,11 @@ This project implements a Text-to-SQL system that converts natural language ques
 
 **Key Features:**
 - Multi-step pipeline: schema extraction → prompt building → SQL generation → validation → execution
-- Three provider implementations: Naive (regex), OpenAI (gpt-4o-mini), Ollama (qwen3:1.7b local)
+- Three provider implementations: Naive (regex), OpenAI (gpt-4o-mini), Ollama (qwen2.5:7b local)
 - SQL validation: syntax check + read-only enforcement + schema validation
-- Few-shot learning from user feedback
+- Few-shot learning with static examples for improved accuracy
 - Evaluation metrics: Exact Match (EM) and Execution Accuracy (EX)
+- Pretty console output with tabulated benchmark results
 
 ## Architecture
 
@@ -25,7 +26,7 @@ This project implements a Text-to-SQL system that converts natural language ques
 **Providers:**
 - **Naive**: Regex patterns (baseline)
 - **OpenAI**: gpt-4o-mini API
-- **Ollama**: qwen3:1.7b local model
+- **Ollama**: qwen2.5:7b local model with streaming support
 
 ## Data Model
 
@@ -67,7 +68,7 @@ class TextToSQLChain:
 
 **Installation:**
 ```bash
-git clone <repository-url>
+git clone https://github.com/dvmizew/DumiDom.git
 cd DumiDom
 python3 -m venv .venv
 source .venv/bin/activate
@@ -91,15 +92,15 @@ python -m src.cli "Show artists" --provider ollama
 
 ## Evaluation Results
 
-Latest benchmark on 17 Spider-style queries:
+Latest benchmark on 17 Spider-style queries (qwen2.5:7b with enhanced prompts):
 
-| Provider | EM   | EX   | Syntax Errors | Latency    |
-|----------|------|------|---------------|------------|
-| Naive    | 5.9% | 5.9% | 5.9%          | ~30ms      |
-| OpenAI   | 0.0% | 0.0% | 100.0%        | ~500ms     |
-| Ollama   | 0.0% | 0.0% | 100.0%        | ~4s/query  |
+| Provider | EM    | EX     | Syntax Err | Logic Err | Exec Err |
+|----------|-------|--------|------------|-----------|----------|
+| Naive    | 5.9%  | 5.9%   | 5.9%       | 88.2%     | 0.0%     |
+| Ollama   | 41.2% | 100.0% | 0.0%       | 0.0%      | 0.0%     |
+| OpenAI   | 0.0%  | 0.0%   | 0.0%       | 0.0%      | 100.0%   |
 
-Results: `eval/results.csv`, Details: `eval/results_details.json`
+Results: `eval/results.csv`, Details: `eval/results_details.json`, Report: `docs/benchmark_results.md`
 
 ## Project Structure
 
@@ -146,16 +147,6 @@ DumiDom/
 - python-dotenv (environment config)
 - tabulate (output formatting)
 - tqdm (progress bars)
-
-## Compliance
-
-This project satisfies T1 assignment requirements:
-- Multi-step LLM chain with validation
-- Multiple provider implementations
-- Schema-aware prompting
-- Error handling and logging
-- Feedback-driven few-shot learning
-- Comprehensive evaluation metrics
 
 ## References
 

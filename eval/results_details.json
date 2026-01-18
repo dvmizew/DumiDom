@@ -1,5 +1,4 @@
 {
-
   "naive": {
     "count": 17,
     "provider": "naive",
@@ -7,6 +6,7 @@
     "ex": 0.0588,
     "syntax_error_rate": 0.0588,
     "logic_error_rate": 0.8824,
+    "execution_error_rate": 0.0,
     "results": [
       {
         "question": "How many tracks are there?",
@@ -22,7 +22,7 @@
         "pred_sql": "",
         "em": false,
         "ex": false,
-        "error": "execution"
+        "error": "syntax"
       },
       {
         "question": "What is the total duration of all tracks?",
@@ -151,8 +151,9 @@
     "provider": "openai",
     "em": 0.0,
     "ex": 0.0,
-    "syntax_error_rate": 1.0,
+    "syntax_error_rate": 0.0,
     "logic_error_rate": 0.0,
+    "execution_error_rate": 1.0,
     "results": [
       {
         "question": "How many tracks are there?",
@@ -295,146 +296,147 @@
   "ollama": {
     "count": 17,
     "provider": "ollama",
-    "em": 0.0,
-    "ex": 0.0,
-    "syntax_error_rate": 1.0,
+    "em": 0.4118,
+    "ex": 1.0,
+    "syntax_error_rate": 0.0,
     "logic_error_rate": 0.0,
+    "execution_error_rate": 0.0,
     "results": [
       {
         "question": "How many tracks are there?",
         "gold_sql": "SELECT COUNT(*) FROM tracks;",
-        "pred_sql": "",
-        "em": false,
-        "ex": false,
-        "error": "execution"
+        "pred_sql": "SELECT COUNT(*) FROM tracks;",
+        "em": true,
+        "ex": true,
+        "error": null
       },
       {
         "question": "List top 5 albums by track count",
         "gold_sql": "SELECT a.title, r.name, COUNT(t.id) AS track_count FROM albums a JOIN artists r ON a.artist_id = r.id LEFT JOIN tracks t ON t.album_id = a.id GROUP BY a.id ORDER BY track_count DESC LIMIT 5;",
-        "pred_sql": "",
+        "pred_sql": "SELECT albums.title, artists.name, COUNT(tracks.id) AS track_count FROM albums JOIN artists ON albums.artist_id = artists.id LEFT JOIN tracks ON tracks.album_id = albums.id GROUP BY albums.id ORDER BY track_count DESC LIMIT 5;",
         "em": false,
-        "ex": false,
-        "error": "execution"
+        "ex": true,
+        "error": null
       },
       {
         "question": "What is the total duration of all tracks?",
         "gold_sql": "SELECT SUM(duration) FROM tracks;",
-        "pred_sql": "",
-        "em": false,
-        "ex": false,
-        "error": "execution"
+        "pred_sql": "SELECT SUM(duration) FROM tracks;",
+        "em": true,
+        "ex": true,
+        "error": null
       },
       {
         "question": "Show artists with more than 1 album",
         "gold_sql": "SELECT r.name, COUNT(a.id) FROM artists r LEFT JOIN albums a ON a.artist_id = r.id GROUP BY r.id HAVING COUNT(a.id) > 1;",
-        "pred_sql": "",
+        "pred_sql": "SELECT artists.name, COUNT(albums.id) \nFROM artists \nLEFT JOIN albums ON albums.artist_id = artists.id \nGROUP BY artists.id \nHAVING COUNT(albums.id) > 1;",
         "em": false,
-        "ex": false,
-        "error": "execution"
+        "ex": true,
+        "error": null
       },
       {
         "question": "List all rock tracks",
         "gold_sql": "SELECT name FROM tracks WHERE genre = 'Rock';",
-        "pred_sql": "",
-        "em": false,
-        "ex": false,
-        "error": "execution"
+        "pred_sql": "SELECT name FROM tracks WHERE genre = 'Rock';",
+        "em": true,
+        "ex": true,
+        "error": null
       },
       {
         "question": "Which album has the longest track?",
         "gold_sql": "SELECT a.title, MAX(t.duration) FROM albums a JOIN tracks t ON t.album_id = a.id GROUP BY a.id ORDER BY MAX(t.duration) DESC LIMIT 1;",
-        "pred_sql": "",
+        "pred_sql": "SELECT albums.title, MAX(tracks.duration) FROM albums JOIN tracks ON tracks.album_id = albums.id GROUP BY albums.id ORDER BY MAX(tracks.duration) DESC LIMIT 1;",
         "em": false,
-        "ex": false,
-        "error": "execution"
+        "ex": true,
+        "error": null
       },
       {
         "question": "Count tracks per genre",
         "gold_sql": "SELECT genre, COUNT(*) FROM tracks GROUP BY genre;",
-        "pred_sql": "",
+        "pred_sql": "SELECT genre, COUNT(*) AS track_count FROM tracks GROUP BY genre;",
         "em": false,
-        "ex": false,
-        "error": "execution"
+        "ex": true,
+        "error": null
       },
       {
         "question": "Average track duration by genre",
         "gold_sql": "SELECT genre, AVG(duration) FROM tracks GROUP BY genre;",
-        "pred_sql": "",
+        "pred_sql": "SELECT genre, AVG(duration) AS avg_duration FROM tracks GROUP BY genre;",
         "em": false,
-        "ex": false,
-        "error": "execution"
+        "ex": true,
+        "error": null
       },
       {
         "question": "List albums released after 2015",
         "gold_sql": "SELECT title, year FROM albums WHERE year > 2015;",
-        "pred_sql": "",
-        "em": false,
-        "ex": false,
-        "error": "execution"
+        "pred_sql": "SELECT title, year FROM albums WHERE year > 2015;",
+        "em": true,
+        "ex": true,
+        "error": null
       },
       {
         "question": "Find albums with more than 2 tracks",
         "gold_sql": "SELECT a.title, COUNT(t.id) AS cnt FROM albums a LEFT JOIN tracks t ON t.album_id = a.id GROUP BY a.id HAVING COUNT(t.id) > 2;",
-        "pred_sql": "",
+        "pred_sql": "SELECT albums.title, COUNT(tracks.id) AS track_count FROM albums JOIN tracks ON tracks.album_id = albums.id GROUP BY albums.id HAVING COUNT(tracks.id) > 2;",
         "em": false,
-        "ex": false,
-        "error": "execution"
+        "ex": true,
+        "error": null
       },
       {
         "question": "How many distinct genres exist?",
         "gold_sql": "SELECT COUNT(DISTINCT genre) FROM tracks;",
-        "pred_sql": "",
-        "em": false,
-        "ex": false,
-        "error": "execution"
+        "pred_sql": "SELECT COUNT(DISTINCT genre) FROM tracks;",
+        "em": true,
+        "ex": true,
+        "error": null
       },
       {
         "question": "List artists sorted by name",
         "gold_sql": "SELECT name FROM artists ORDER BY name;",
-        "pred_sql": "",
-        "em": false,
-        "ex": false,
-        "error": "execution"
+        "pred_sql": "SELECT name FROM artists ORDER BY name;",
+        "em": true,
+        "ex": true,
+        "error": null
       },
       {
         "question": "Show albums and their artist names",
         "gold_sql": "SELECT a.title, r.name FROM albums a JOIN artists r ON a.artist_id = r.id;",
-        "pred_sql": "",
+        "pred_sql": "SELECT albums.title, artists.name FROM albums JOIN artists ON albums.artist_id = artists.id;",
         "em": false,
-        "ex": false,
-        "error": "execution"
+        "ex": true,
+        "error": null
       },
       {
         "question": "Count total albums per artist",
         "gold_sql": "SELECT r.name, COUNT(a.id) FROM artists r LEFT JOIN albums a ON a.artist_id = r.id GROUP BY r.id;",
-        "pred_sql": "",
+        "pred_sql": "SELECT artists.name, COUNT(albums.id) AS total_albums FROM artists JOIN albums ON albums.artist_id = artists.id GROUP BY artists.id;",
         "em": false,
-        "ex": false,
-        "error": "execution"
+        "ex": true,
+        "error": null
       },
       {
         "question": "What tracks are in the first album?",
         "gold_sql": "SELECT t.name FROM tracks t JOIN albums a ON t.album_id = a.id WHERE a.id = 1;",
-        "pred_sql": "",
+        "pred_sql": "SELECT tracks.name FROM tracks JOIN albums ON albums.id = tracks.album_id WHERE albums.title = (SELECT title FROM albums LIMIT 1);",
         "em": false,
-        "ex": false,
-        "error": "execution"
+        "ex": true,
+        "error": null
       },
       {
         "question": "Longest track name",
         "gold_sql": "SELECT name FROM tracks ORDER BY LENGTH(name) DESC LIMIT 1;",
-        "pred_sql": "",
+        "pred_sql": "SELECT tracks.name FROM tracks ORDER BY duration DESC LIMIT 1;",
         "em": false,
-        "ex": false,
-        "error": "execution"
+        "ex": true,
+        "error": null
       },
       {
         "question": "Album release years",
         "gold_sql": "SELECT DISTINCT year FROM albums ORDER BY year;",
-        "pred_sql": "",
-        "em": false,
-        "ex": false,
-        "error": "execution"
+        "pred_sql": "SELECT DISTINCT year FROM albums ORDER BY year;",
+        "em": true,
+        "ex": true,
+        "error": null
       }
     ]
   }

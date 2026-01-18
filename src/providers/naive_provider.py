@@ -1,11 +1,10 @@
-from typing import Any, List, Tuple
 from .base import Provider
 import re
 
 class NaiveProvider(Provider):
     name = "naive"
 
-    def generate_sql(self, question, schema_context, few_shots=None):
+    def generate_sql(self, question, schema_context):
         q = question.lower()
         # simple regex patterns for demo_music schema
         if "how many" in q and ("tracks" in q or "songs" in q):

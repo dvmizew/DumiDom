@@ -4,7 +4,7 @@ from tqdm import tqdm
 from src.chain.text_to_sql import TextToSQLChain
 from src.validation.sql_validator import normalize_sql
 from src.db.sqlite_db import SQLiteDB
-from src.eval.spider_loader import load_spider
+import json
 
 def exact_match(pred, gold):
     try:
@@ -38,7 +38,8 @@ def run_benchmark(
     If db_root is provided, uses db_root/{db_id}/{db_id}.sqlite; otherwise uses default_db.
     Returns dict with count, em, ex, syntax_error_rate, logic_error_rate, results list.
     """
-    data = load_spider(dataset_path)
+    with open(dataset_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
     if limit:
         data = data[:limit]
 
@@ -47,6 +48,7 @@ def run_benchmark(
     ex_total = 0
     syntax_errors = 0
     logic_errors = 0
+    execution_errors = 0
     results = []
 
     for item in tqdm(data, desc=f"benchmark ({provider})"):
@@ -65,10 +67,19 @@ def run_benchmark(
         try:
             pred_sql, rows, _summary = chain.run(question, provider_name=provider, db_path=db_path)
         except Exception as e:
-            error_type = "syntax" if "syntax" in str(e).lower() else "execution"
-            syntax_errors += 1
+            msg = str(e).lower()
+            if "validation_failed" in msg or "syntax" in msg:
+                error_type = "syntax"
+                syntax_errors += 1
+            else:
+                error_type = "execution"
+                execution_errors += 1
             pred_sql = ""
             rows = []
+        
+        if not pred_sql and error_type is None:
+            error_type = "syntax"
+            syntax_errors += 1
         
         em = False
         ex = False
@@ -78,7 +89,7 @@ def run_benchmark(
             if db_path:
                 ex = execution_accuracy(pred_sql, gold_sql, db_path)
                 ex_total += ex
-                if not ex and not error_type:
+                if not ex:
                     logic_errors += 1
                     error_type = "logic"
         
@@ -99,5 +110,6 @@ def run_benchmark(
         "ex": round(ex_total / n, 4) if n else 0.0,
         "syntax_error_rate": round(syntax_errors / n, 4) if n else 0.0,
         "logic_error_rate": round(logic_errors / n, 4) if n else 0.0,
+        "execution_error_rate": round(execution_errors / n, 4) if n else 0.0,
         "results": results,
     }

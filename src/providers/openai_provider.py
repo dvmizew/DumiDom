@@ -1,14 +1,11 @@
 import os
-from typing import Any, List, Tuple
 from .base import Provider
-from src.chain.prompting import build_sql_prompt
+from src.chain.text_to_sql import build_sql_prompt
 
 try:
-    from openai import OpenAI  # type: ignore
+    from openai import OpenAI
 except Exception:
     OpenAI = None
-
-SYSTEM_PROMPT = "You are a SQL assistant. Write SQLite queries using only the provided schema."
 
 class OpenAIProvider(Provider):
     name = "openai"
@@ -22,17 +19,21 @@ class OpenAIProvider(Provider):
         self.client = OpenAI(api_key=api_key)
         self.model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
-    def generate_sql(self, question, schema_context, few_shots=None):
+    def generate_sql(self, question, schema_context):
         # skip dynamic examples to save tokens
-        prompt = build_sql_prompt(schema_context, question, extra_examples=None)
+        prompt = build_sql_prompt(schema_context, question)
         try:
             resp = self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],  # no system prompt
                 temperature=0,
-                max_tokens=100
+                max_tokens=100,
+                timeout=30,
             )
-            return resp.choices[0].message.content.strip()
+            content = resp.choices[0].message.content.strip()
+            if not content:
+                raise RuntimeError("OpenAI returned empty content")
+            return content
         except Exception as e:
             if "quota" in str(e).lower() or "rate_limit" in str(e).lower():
                 raise RuntimeError("OpenAI quota exceeded. Switch to --provider naive or ollama")
