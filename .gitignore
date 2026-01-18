@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Data
+/data/*.sqlite
+/data/*.db
+/eval/outputs/
+/eval/feedback.jsonl
+
+# VSCode
+.vscode/
+
+# Misc
+.DS_Store
