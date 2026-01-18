@@ -1,0 +1,4 @@
+Provider,EM,EX,SyntaxErr,LogicErr
+naive,0.0588,0.0588,0.0588,0.8824
+ollama,0.0000,0.0000,1.0000,0.0000
+openai,0.0000,0.0000,1.0000,0.0000

@@ -1,0 +1,87 @@
+[
+  {
+    "question": "How many tracks are there?",
+    "query": "SELECT COUNT(*) FROM tracks;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "List top 5 albums by track count",
+    "query": "SELECT a.title, r.name, COUNT(t.id) AS track_count FROM albums a JOIN artists r ON a.artist_id = r.id LEFT JOIN tracks t ON t.album_id = a.id GROUP BY a.id ORDER BY track_count DESC LIMIT 5;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "What is the total duration of all tracks?",
+    "query": "SELECT SUM(duration) FROM tracks;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "Show artists with more than 1 album",
+    "query": "SELECT r.name, COUNT(a.id) FROM artists r LEFT JOIN albums a ON a.artist_id = r.id GROUP BY r.id HAVING COUNT(a.id) > 1;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "List all rock tracks",
+    "query": "SELECT name FROM tracks WHERE genre = 'Rock';",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "Which album has the longest track?",
+    "query": "SELECT a.title, MAX(t.duration) FROM albums a JOIN tracks t ON t.album_id = a.id GROUP BY a.id ORDER BY MAX(t.duration) DESC LIMIT 1;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "Count tracks per genre",
+    "query": "SELECT genre, COUNT(*) FROM tracks GROUP BY genre;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "Average track duration by genre",
+    "query": "SELECT genre, AVG(duration) FROM tracks GROUP BY genre;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "List albums released after 2015",
+    "query": "SELECT title, year FROM albums WHERE year > 2015;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "Find albums with more than 2 tracks",
+    "query": "SELECT a.title, COUNT(t.id) AS cnt FROM albums a LEFT JOIN tracks t ON t.album_id = a.id GROUP BY a.id HAVING COUNT(t.id) > 2;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "How many distinct genres exist?",
+    "query": "SELECT COUNT(DISTINCT genre) FROM tracks;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "List artists sorted by name",
+    "query": "SELECT name FROM artists ORDER BY name;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "Show albums and their artist names",
+    "query": "SELECT a.title, r.name FROM albums a JOIN artists r ON a.artist_id = r.id;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "Count total albums per artist",
+    "query": "SELECT r.name, COUNT(a.id) FROM artists r LEFT JOIN albums a ON a.artist_id = r.id GROUP BY r.id;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "What tracks are in the first album?",
+    "query": "SELECT t.name FROM tracks t JOIN albums a ON t.album_id = a.id WHERE a.id = 1;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "Longest track name",
+    "query": "SELECT name FROM tracks ORDER BY LENGTH(name) DESC LIMIT 1;",
+    "db_id": "demo_music"
+  },
+  {
+    "question": "Album release years",
+    "query": "SELECT DISTINCT year FROM albums ORDER BY year;",
+    "db_id": "demo_music"
+  }
+]
