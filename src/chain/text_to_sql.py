@@ -41,44 +41,73 @@ INSTRUCTIONS = (
     "Do NOT use table aliases; reference full table names in qualified columns (e.g., artists.name)."
 )
 
-
 def build_sql_prompt(schema, question):
-    """Build a complete prompt with schema, instructions, examples, and the question."""
+    """Build a complete prompt with schema, instructions, static and dynamic examples, and the question."""
     lines = ["Schema:", schema, "", "Instructions:", INSTRUCTIONS, "", "Examples:"]
+    # static few-shots
     for ex in STATIC_FEW_SHOTS:
         lines.append(f"Q: {ex['question']}")
         lines.append(f"SQL: {ex['sql']}")
+    # dynamic few-shots from feedback
+    try:
+        from src.feedback import load_feedback_examples
+        feedback_examples = load_feedback_examples(max_examples=3)
+        if feedback_examples:
+            lines.append("# User feedback examples:")
+            for ex in feedback_examples:
+                lines.append(f"Q: {ex['question']}")
+                lines.append(f"SQL: {ex['sql']}")
+    except Exception:
+        pass
     lines.append("")
     lines.append(f"Question: {question}")
     lines.append("SQL:")
     return "\n".join(lines)
-
 
 class TextToSQLChain:
     def __init__(self):
         pass
 
     def run(self, question, provider_name="naive", db_path=None):
+        vague = False
+        if len(question.strip().split()) < 4 or question.strip().lower() in {"query", "search", "find", "show", "list", "get"}:
+            vague = True
+        elif any(x in question.lower() for x in ["something", "anything", "data", "info", "information", "details"]):
+            vague = True
+
         from src.providers import PROVIDERS
-        
         db = SQLiteDB(db_path or os.environ.get("SQLITE_DB_PATH", "data/demo_music.sqlite"))
         schema_ctx = db.describe_schema()
         tables = db.tables()
-
         ProviderCls = PROVIDERS.get(provider_name)
         if ProviderCls is None:
             raise RuntimeError(f"Provider '{provider_name}' not available")
         provider = ProviderCls()
 
-        sql = provider.generate_sql(question, schema_ctx)
-        ok, msg = validate_sql(sql, tables)
-        if not ok:
-            raise RuntimeError(f"validation_failed: {msg}")
-
-        try:
-            db.explain(sql)
-            rows = db.execute(sql)
-            summary = provider.summarize(question, rows)
-            return sql, rows, summary
-        except Exception as e:
-            raise RuntimeError(f"execution_error: {e}")
+        attempts = 2
+        last_error = None
+        for attempt in range(attempts):
+            q = question
+            if vague:
+                q = question + "\n# Clarify: Be specific and use concrete columns and values from the schema."
+            if attempt == 0:
+                sql = provider.generate_sql(q, schema_ctx)
+            else:
+                # retry
+                error_msg = f"Previous SQL was invalid: {last_error}. Please fix the SQL."
+                q = q + f"\n# {error_msg}"
+                sql = provider.generate_sql(q, schema_ctx)
+            ok, msg = validate_sql(sql, tables)
+            if ok:
+                try:
+                    db.explain(sql)
+                    rows = db.execute(sql)
+                    summary = provider.summarize(question, rows)
+                    return sql, rows, summary
+                except Exception as e:
+                    last_error = str(e)
+                    continue
+            else:
+                last_error = msg
+                continue
+        raise RuntimeError(f"validation_failed: {last_error}")
