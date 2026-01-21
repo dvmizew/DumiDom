@@ -31,6 +31,9 @@ This project implements a Text-to-SQL system that converts natural language ques
 ## Data Model
 
 Demo database (`demo_music.sqlite`):
+## Database Schema Diagram
+
+![Database schema diagram](docs/dbdiagram.png)
 
 ```sql
 CREATE TABLE artists (artist_id INTEGER PRIMARY KEY, name TEXT UNIQUE);
