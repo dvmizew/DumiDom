@@ -1,3 +1,5 @@
+# Benchmark results (auto-generated)
+benchmark_results/
 # Python
 __pycache__/
 *.py[cod]
