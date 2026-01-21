@@ -75,9 +75,8 @@ def generate_markdown_table(results: Dict) -> str:
             f"{m['ex']:.1%}",
             f"{m['syntax_error_rate']:.1%}",
             f"{m['logic_error_rate']:.1%}",
-            f"{m['execution_error_rate']:.1%}",
+            f"{m['execution_error_rate']:.1%}"
         ])
-
     table_md = tabulate(rows, headers=headers, tablefmt="github")
     return "# Benchmark Results\n\n" + table_md
 
@@ -86,18 +85,16 @@ def print_console_table(results: Dict):
     if not results:
         print("No results.")
         return
-    headers = ["Provider", "EM", "EX", "Syntax Err", "Logic Err", "Exec Err", "Error"]
+    headers = ["Provider", "EM", "EX", "Syntax Err", "Logic Err", "Exec Err"]
     rows = []
     for provider, m in sorted(results.items()):
-        error_msg = m.get("error", "")
         rows.append([
             provider,
             f"{m['em']:.1%}",
             f"{m['ex']:.1%}",
             f"{m['syntax_error_rate']:.1%}",
             f"{m['logic_error_rate']:.1%}",
-            f"{m['execution_error_rate']:.1%}",
-            error_msg[:60] + ("..." if error_msg and len(error_msg) > 60 else "")
+            f"{m['execution_error_rate']:.1%}"
         ])
     print(tabulate(rows, headers=headers, tablefmt="fancy_grid"))
 
@@ -105,7 +102,6 @@ def print_console_table(results: Dict):
 def generate_csv_table(results: Dict) -> str:
     if not results:
         return "Provider,EM,EX,SyntaxErr,LogicErr,ExecErr"
-    
     lines = ["Provider,EM,EX,SyntaxErr,LogicErr,ExecErr"]
     for provider, m in sorted(results.items()):
         lines.append(
