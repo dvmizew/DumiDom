@@ -6,6 +6,37 @@ from tabulate import tabulate
 from src.eval.benchmark import run_benchmark
 from src.providers import PROVIDERS
 
+OLLAMA_MODELS = [
+    "ollama-phi3",
+    "ollama-qwen",
+    "ollama-qwen3",
+    "ollama-codellama",
+    "ollama-starcoder",
+]
+
+def provider_row(provider, m):
+    return [
+        provider,
+        f"{m['em']:.1%}",
+        f"{m['ex']:.1%}",
+        f"{m['syntax_error_rate']:.1%}",
+        f"{m['logic_error_rate']:.1%}",
+        f"{m['execution_error_rate']:.1%}"
+    ]
+
+def error_metrics(provider_name, msg):
+    return {
+        "count": 0,
+        "provider": provider_name,
+        "em": 0.0,
+        "ex": 0.0,
+        "syntax_error_rate": 0.0,
+        "logic_error_rate": 0.0,
+        "execution_error_rate": 1.0,
+        "results": [],
+        "error": msg,
+    }
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
@@ -34,17 +65,7 @@ def run_multi_provider(dataset_path: str, default_db: str, providers: List[str],
         except Exception as e:
             msg = str(e)
             print(f"\n[ERROR] {provider_name} failed: {msg}\n")
-            error_obj = {
-                "count": 0,
-                "provider": provider_name,
-                "em": 0.0,
-                "ex": 0.0,
-                "syntax_error_rate": 0.0,
-                "logic_error_rate": 0.0,
-                "execution_error_rate": 1.0,
-                "results": [],
-                "error": msg,
-            }
+            error_obj = error_metrics(provider_name, msg)
             if provider_name == "openai":
                 if "quota" in msg.lower() and ("exceeded" in msg.lower() or "reached" in msg.lower()):
                     openai_error = "OpenAI quota exceeded"
@@ -69,14 +90,7 @@ def print_console_table(results: Dict):
     headers = ["Provider", "EM", "EX", "Syntax Err", "Logic Err", "Exec Err"]
     rows = []
     for provider, m in sorted(results.items()):
-        rows.append([
-            provider,
-            f"{m['em']:.1%}",
-            f"{m['ex']:.1%}",
-            f"{m['syntax_error_rate']:.1%}",
-            f"{m['logic_error_rate']:.1%}",
-            f"{m['execution_error_rate']:.1%}"
-        ])
+        rows.append(provider_row(provider, m))
         print(f"\nModel: {provider}")
         print(f"  Exact Match (EM): {m['em']:.1%}")
         print(f"  Execution Accuracy (EX): {m['ex']:.1%}")
@@ -89,16 +103,7 @@ def generate_markdown_table(results: Dict) -> str:
     if not results:
         return "No results."
     headers = ["Provider", "EM", "EX", "Syntax Err", "Logic Err", "Exec Err"]
-    rows = []
-    for provider, m in sorted(results.items()):
-        rows.append([
-            provider,
-            f"{m['em']:.1%}",
-            f"{m['ex']:.1%}",
-            f"{m['syntax_error_rate']:.1%}",
-            f"{m['logic_error_rate']:.1%}",
-            f"{m['execution_error_rate']:.1%}"
-        ])
+    rows = [provider_row(provider, m) for provider, m in sorted(results.items())]
     table_md = tabulate(rows, headers=headers, tablefmt="github")
     return "# Benchmark Results\n\n" + table_md
 
@@ -107,10 +112,8 @@ def generate_csv_table(results: Dict) -> str:
         return "Provider,EM,EX,SyntaxErr,LogicErr,ExecErr"
     lines = ["Provider,EM,EX,SyntaxErr,LogicErr,ExecErr"]
     for provider, m in sorted(results.items()):
-        lines.append(
-            f"{provider},{m['em']:.4f},{m['ex']:.4f},{m['syntax_error_rate']:.4f},"
-            f"{m['logic_error_rate']:.4f},{m['execution_error_rate']:.4f}"
-        )
+        row = provider_row(provider, m)
+        lines.append(",".join(str(x).replace('%','') if i>0 else str(x) for i,x in enumerate(row)))
     return "\n".join(lines)
 
 def main():
@@ -126,23 +129,16 @@ def main():
     parser.add_argument("--output-json", dest="output_json", help="Output very detailed JSON file (all predictions, errors, etc)")
     args = parser.parse_args()
 
-    all_ollama_models = [
-        "ollama-phi3",
-        "ollama-qwen",
-        "ollama-qwen3",
-        "ollama-codellama",
-        "ollama-starcoder",
-    ]
     providers = []
     for p in args.providers:
         if p == "ollama" or p == "ollama-all":
-            for m in all_ollama_models:
+            for m in OLLAMA_MODELS:
                 if PROVIDERS.get(m) is not None:
                     providers.append(m)
         else:
             providers.append(p)
     if args.all_available:
-        providers = [p for p in (["naive", "openai"] + all_ollama_models) if PROVIDERS.get(p) is not None]
+        providers = [p for p in (["naive", "openai"] + OLLAMA_MODELS) if PROVIDERS.get(p) is not None]
         print(f"Available providers: {providers}\n")
 
     results = run_multi_provider(args.dataset, args.default_db, providers, limit=args.limit)
