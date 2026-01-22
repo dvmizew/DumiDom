@@ -1,6 +1,5 @@
 # Text-To-SQL System
 
-
 Natural language to SQL conversion with multi-step validation, schema awareness, and multi-provider support. Now features modular Ollama providers, robust benchmarking, and cross-platform compatibility.
 
 ## Overview
@@ -96,10 +95,6 @@ make benchmark-compare    # Compare all providers (naive, openai, all Ollama mod
 make clean                # Clean cache files
 ```
 
-**VS Code/Windows:**
-You can run benchmarks directly in VS Code using the provided tasks.json, or use the python command directly on Windows.
-
-
 **CLI Examples:**
 ```bash
 python -m src.cli "How many tracks?" --provider naive
@@ -149,21 +144,19 @@ DumiDom/
 ├── eval/
 │   ├── spider_sample.json       # Test queries
 │   └── feedback.jsonl           # User feedback logs
-├── benchmark_results/
 │   ├── benchmark_results.md     # Latest results
 │   ├── results.csv              # CSV results
 │   └── results_details.json     # Detailed results
+├── Makefile                      # Build automation
+├── requirements.txt              # Dependencies
+└── README.md                     # This file
+```
 
 ## Feedback Loop & Output
 
 Feedback is logged for each query, including errors and results. See [src/feedback.py](src/feedback.py) for details. The feedback system is robust and only logs relevant entries, ensuring clarity and traceability for benchmarking and debugging.
 
 All benchmark results are saved in `benchmark_results/` as Markdown, CSV, and detailed JSON. Output logic is deduplicated and robust, with clear file naming and directory management. Memory is managed efficiently by unloading Ollama models after use.
-
-├── Makefile                      # Build automation
-├── requirements.txt              # Dependencies
-└── README.md                     # This file
-```
 
 ## Dependencies
 
@@ -175,10 +168,20 @@ All benchmark results are saved in `benchmark_results/` as Markdown, CSV, and de
 - tabulate (output formatting)
 - tqdm (progress bars)
 
+---
+
+## Originality Statement
+
+This project (code and documentation) is original and created for academic requirements. It does not contain sections copied from other sources without citation. Any code, text, or idea taken from external sources is properly cited. The project complies with the ethics and academic integrity rules of FMI.
+
+## AI Usage
+
+AI tools (GitHub Copilot, ChatGPT) were used for code generation, explanations, and documentation structuring, as permitted by the assignment. All AI tools and sources used are listed in the References section.
+
 ## References
 
-[1] OpenAI. (2023). GPT-4 Technical Report. https://openai.com/research/gpt-4
-
-[2] Yu et al. (2018). Spider: A Large-Scale Human-Labeled Dataset. EMNLP 2018. https://arxiv.org/abs/1809.08887
-
-[3] sqlglot Documentation. https://sqlglot.com
+[1] OpenAI, GPT-4 Technical Report, https://openai.com/research/gpt-4
+[2] Yu, Tao, et al., Spider: A Large-Scale Human-Labeled Dataset for Complex and Cross-Domain Semantic Parsing and Text-to-SQL Task, EMNLP 2018, https://arxiv.org/abs/1809.08887
+[3] sqlglot Documentation, https://sqlglot.com
+[4] OpenAI, ChatGPT, https://chatgpt.com/
+[5] Copilot, https://copilot.microsoft.com
