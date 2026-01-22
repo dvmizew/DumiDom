@@ -109,9 +109,6 @@ python -m src.cli "Show albums" --provider ollama-phi3
 
 ## Evaluation Results
 
-
-## Evaluation Results
-
 Latest benchmark (2026-01-22) on 17 Spider-style queries (all providers, all Ollama models):
 
 | Provider           | EM    | EX    | Syntax Err   | Logic Err   | Exec Err   |
