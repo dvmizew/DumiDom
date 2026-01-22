@@ -51,15 +51,16 @@ Sample data: 3 artists, 7 albums, 21 tracks.
 
 **TextToSQLChain** (`src/chain/text_to_sql.py`):
 ```python
-class TextToSQLChain:
-    def run(self, question: str, provider_name: str = "naive") -> dict:
-        schema = self.db.describe_schema()
-        sql = self.provider.generate_sql(question, schema)
-        is_valid, error = validate_sql(sql, schema)
-        if not is_valid:
-            return {"error": error}
-        rows = self.db.execute(sql)
-        return {"sql": sql, "rows": rows}
+from src.chain.text_to_sql import TextToSQLChain
+chain = TextToSQLChain()
+sql, rows, summary = chain.run(
+    "How many tracks?",
+    provider_name="ollama",  # or "openai", "naive"
+    db_path="data/demo_music.sqlite"
+)
+print("SQL:", sql)
+print("Results:", rows)
+print("Summary:", summary)
 ```
 
 **SQL Validation** (`src/validation/sql_validator.py`):
@@ -100,10 +101,10 @@ Latest benchmark on 17 Spider-style queries (qwen2.5:7b with enhanced prompts):
 | Provider | EM    | EX     | Syntax Err | Logic Err | Exec Err |
 |----------|-------|--------|------------|-----------|----------|
 | Naive    | 5.9%  | 5.9%   | 5.9%       | 88.2%     | 0.0%     |
-| Ollama   | 41.2% | 100.0% | 0.0%       | 0.0%      | 0.0%     |
+| Ollama   | 35.3% | 100.0% | 0.0%       | 0.0%      | 0.0%     |
 | OpenAI   | 0.0%  | 0.0%   | 0.0%       | 0.0%      | 100.0%   |
 
-Results: `eval/results.csv`, Details: `eval/results_details.json`, Report: `docs/benchmark_results.md`
+Results: `benchmark_results/results.csv`, Details: `benchmark_results/results_details.json`, Report: `benchmark_results/benchmark_results.md`
 
 ## Project Structure
 
@@ -112,8 +113,7 @@ DumiDom/
 ├── src/
 │   ├── cli.py                    # CLI entry point
 │   ├── chain/
-│   │   ├── text_to_sql.py       # Main pipeline
-│   │   └── prompting.py         # Prompt building
+│   │   └── text_to_sql.py       # Main pipeline
 │   ├── providers/
 │   │   ├── base.py              # Provider interface
 │   │   ├── naive_provider.py    # Regex provider
@@ -134,8 +134,13 @@ DumiDom/
 ├── eval/
 │   ├── spider_sample.json       # Test queries
 │   └── feedback.jsonl           # User feedback logs
-├── docs/
-│   └── benchmark_results.md     # Latest results
+├── benchmark_results/
+│   ├── benchmark_results.md     # Latest results
+│   ├── results.csv              # CSV results
+│   └── results_details.json     # Detailed results
+## Feedback Loop
+
+User feedback and corrections are logged and used as few-shot examples in the prompt for future queries. This helps the system learn from user corrections and improve SQL generation over time.
 ├── Makefile                      # Build automation
 ├── requirements.txt              # Dependencies
 └── README.md                     # This file
