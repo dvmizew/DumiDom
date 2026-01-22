@@ -27,12 +27,12 @@ class OllamaProvider(Provider):
             )
             content = "".join(chunk.get('message', {}).get('content', '') for chunk in stream).strip()
             # unwrap ```sql fenced blocks if the model returns markdown
-            fence_match = re.search(r"```(?:sql)?\s*(.*?)```", content, re.DOTALL | re.IGNORECASE)
+            fence_match = re.search(r"```(?:sql)?\\s*(.*?)```", content, re.DOTALL | re.IGNORECASE)
             if fence_match:
                 content = fence_match.group(1).strip()
             if content.lower().startswith("sql:"):
                 content = content.split(":", 1)[1].strip()
-            select_match = re.search(r"(?is)(select\s.+)", content)
+            select_match = re.search(r"(?is)(select\\s.+)", content)
             if select_match:
                 content = select_match.group(1).strip()
             content = content.strip()
