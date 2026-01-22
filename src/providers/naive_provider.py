@@ -14,17 +14,17 @@ class NaiveProvider(Provider):
         if m:
             artist = m.group(2).strip(' "\'')
             return (
-                "SELECT t.name, a.title FROM tracks t "
-                "JOIN albums a ON t.album_id = a.id "
-                "JOIN artists r ON a.artist_id = r.id "
-                f"WHERE r.name LIKE '%{artist}%';"
+                "SELECT tracks.name, albums.title FROM tracks "
+                "JOIN albums ON tracks.album_id = albums.id "
+                "JOIN artists ON albums.artist_id = artists.id "
+                f"WHERE artists.name LIKE '%{artist}%';"
             )
         if "top" in q and "albums" in q and ("track" in q or "songs" in q):
             return (
-                "SELECT a.title, r.name, COUNT(t.id) AS track_count "
-                "FROM albums a JOIN artists r ON a.artist_id = r.id "
-                "LEFT JOIN tracks t ON t.album_id = a.id "
-                "GROUP BY a.id ORDER BY track_count DESC LIMIT 5;"
+                "SELECT albums.title, artists.name, COUNT(tracks.id) AS track_count "
+                "FROM albums JOIN artists ON albums.artist_id = artists.id "
+                "LEFT JOIN tracks ON tracks.album_id = albums.id "
+                "GROUP BY albums.id ORDER BY track_count DESC LIMIT 5;"
             )
         return "SELECT name FROM artists LIMIT 5;"
 

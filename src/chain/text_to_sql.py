@@ -14,7 +14,7 @@ STATIC_FEW_SHOTS = [
     },
     {
         "question": "List all rock tracks",
-        "sql": "SELECT name FROM tracks WHERE genre = 'Rock';",
+        "sql": "SELECT tracks.name FROM tracks WHERE tracks.genre = 'Rock';",
     },
     {
         "question": "Which album has the longest track?",
@@ -22,15 +22,15 @@ STATIC_FEW_SHOTS = [
     },
     {
         "question": "Average track duration by genre",
-        "sql": "SELECT genre, AVG(duration) FROM tracks GROUP BY genre;",
+        "sql": "SELECT tracks.genre, AVG(tracks.duration) FROM tracks GROUP BY tracks.genre;",
     },
     {
         "question": "List albums released after 2015",
-        "sql": "SELECT title, year FROM albums WHERE year > 2015;",
+        "sql": "SELECT albums.title, albums.year FROM albums WHERE albums.year > 2015;",
     },
     {
         "question": "Album release years",
-        "sql": "SELECT DISTINCT year FROM albums ORDER BY year;",
+        "sql": "SELECT DISTINCT albums.year FROM albums ORDER BY albums.year;",
     },
 ]
 
