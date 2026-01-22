@@ -1,3 +1,8 @@
+# Video Presentation
+
+The project presentation is available here: [docs/Presentation.pptx](docs/Presentation.pptx)
+
+Download and open with PowerPoint or Google Slides for details.
 # Text-To-SQL System
 
 Natural language to SQL conversion with multi-step validation, schema awareness, and multi-provider support. Now features modular Ollama providers, robust benchmarking, and cross-platform compatibility.
