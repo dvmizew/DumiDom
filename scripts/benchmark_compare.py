@@ -3,13 +3,12 @@ import sys
 import json
 from typing import List, Dict
 from tabulate import tabulate
+from src.eval.benchmark import run_benchmark
+from src.providers import PROVIDERS
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-
-from src.eval.benchmark import run_benchmark
-from src.providers import PROVIDERS
 
 OLLAMA_MODELS = [
     "ollama-phi3",
