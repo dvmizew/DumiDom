@@ -9,7 +9,7 @@ from src.feedback import log_feedback
 def main():
     parser = argparse.ArgumentParser(description="Text-To-SQL CLI")
     parser.add_argument("question", help="NLP question to answer")
-    parser.add_argument("--provider", default="naive", help="Provider: naive|openai|ollama")
+    parser.add_argument("--provider", default="naive", help="Provider: naive|openai|ollama-qwen|ollama-phi3")
     parser.add_argument("--db-path", dest="db_path", help="SQLite DB path")
     parser.add_argument("--show-rows", dest="show_rows", action="store_true", help="Show result rows")
     parser.add_argument("--no-show-rows", dest="show_rows", action="store_false", help="Hide result rows")
