@@ -13,9 +13,10 @@ if ROOT not in sys.path:
 OLLAMA_MODELS = [
     "ollama-phi3",
     "ollama-qwen",
-    "ollama-qwen3",
     "ollama-codellama",
-    "ollama-starcoder",
+    "ollama-hrida",
+    "ollama-deepseek",
+    "ollama-duckdb",
 ]
 
 def provider_row(provider, m):
@@ -45,7 +46,9 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-def run_multi_provider(dataset_path: str, default_db: str, providers: List[str], limit: int = None) -> Dict:
+from typing import Optional
+
+def run_multi_provider(dataset_path: str, default_db: str, providers: List[str], limit: Optional[int] = None) -> Dict:
     """Run benchmarks across multiple providers and return aggregated results."""
     import subprocess
     results = {}
@@ -53,9 +56,10 @@ def run_multi_provider(dataset_path: str, default_db: str, providers: List[str],
     ollama_model_map = {
         "ollama-phi3": "phi3:medium",
         "ollama-qwen": "qwen2.5:7b",
-        "ollama-qwen3": "qwen3:1.7b",
         "ollama-codellama": "codellama:7b",
-        "ollama-starcoder": "starcoder:latest",
+        "ollama-hrida": "HridaAI/hrida-t2sql-128k:latest",
+        "ollama-deepseek": "deepseek-coder:6.7b",
+        "ollama-duckdb": "duckdb-nsql:7b",
     }
     for provider_name in providers:
         prov = PROVIDERS.get(provider_name)

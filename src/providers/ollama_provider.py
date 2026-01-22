@@ -18,6 +18,8 @@ class OllamaProvider(Provider):
 
     def generate_sql(self, question, schema_context):
         prompt = build_sql_prompt(schema_context, question)
+        if ollama is None:
+            raise RuntimeError(f"Ollama provider '{self.name}': ollama package is not installed or failed to import.")
         try:
             stream = ollama.chat(
                 model=self.model,

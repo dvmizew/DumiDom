@@ -35,10 +35,20 @@ STATIC_FEW_SHOTS = [
 ]
 
 INSTRUCTIONS = (
-    "Write one valid SQLite SELECT statement using only the provided schema. "
-    "Output raw SQL only: no markdown, no prose, no backticks. Start with SELECT. "
+    "You are an expert SQL generator. Your task is to write a single valid SQLite SELECT statement using only the provided schema. "
+    "Output ONLY raw SQL, on a single line if possible: no markdown, no explanations, no backticks, no text, no comments, no code fences. "
+    "Start your answer with SELECT. Do NOT include any introductory or closing text. "
+    "If you are unsure, return: SELECT 1 WHERE 0; (a valid but empty result). "
+    "Do NOT use table aliases; always use full table names in qualified columns (e.g., artists.name). "
     "Use GROUP BY / HAVING when counting per entity. If unclear, add LIMIT 5. "
-    "Do NOT use table aliases; reference full table names in qualified columns (e.g., artists.name)."
+    "NEVER output anything except valid SQL. "
+    "Examples of what NOT to do:"
+    "\nINCORRECT: ```sql SELECT * FROM tracks; ```"
+    "\nINCORRECT: The SQL query is: SELECT * FROM tracks;"
+    "\nINCORRECT: SELECT * FROM tracks; -- list all tracks"
+    "\nINCORRECT: SELECT * FROM tracks; /* list all tracks */"
+    "\nINCORRECT: SELECT * FROM tracks;\nExplanation: This query lists all tracks."
+    "\nCORRECT: SELECT * FROM tracks;"
 )
 
 def build_sql_prompt(schema, question):
