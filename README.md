@@ -17,15 +17,11 @@ The project will load these variables automatically. If you use only local provi
 
 The project presentation is available here: [docs/Presentation.pptx](docs/Presentation.pptx)
 
-# Text-To-SQL System
-
-Natural language to SQL conversion with multi-step validation, schema awareness, and multi-provider support. Now features modular Ollama providers, robust benchmarking, and cross-platform compatibility.
-
 ## Overview
 
 This project implements a Text-to-SQL system that converts natural language questions into executable SQL queries. The system uses a multi-step pipeline with validation, schema awareness, and supports multiple LLM providers.
 
-**Key Features:**
+**Features:**
 - Multi-step pipeline: schema extraction → prompt building → SQL generation → validation → execution
 - Modular provider architecture: Naive (regex), OpenAI (gpt-4o-mini), Ollama (multiple models: phi3, qwen, codellama, starcoder, etc.)
 - Centralized provider mapping and DRY benchmarking logic
@@ -49,7 +45,7 @@ This project implements a Text-to-SQL system that converts natural language ques
 ## Providers
 
 - **naive**: Simple rule-based baseline, not schema-aware.
-- **openai**: Uses OpenAI GPT models, prompt includes schema context.
+- **openai**: Uses OpenAI gpt-4o-mini
 - **ollama-phi3**: Local LLM (phi3:medium)
 - **ollama-qwen**: Local LLM (qwen2.5:7b)
 - **ollama-codellama**: Local LLM (codellama:7b)
@@ -65,54 +61,6 @@ Demo database (`demo_music.sqlite`):
 ## Database Schema Diagram
 
 ![Database schema diagram](docs/dbdiagram.png)
-
-```sql
-CREATE TABLE artists (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
-);
-
-CREATE TABLE albums (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    artist_id INTEGER NOT NULL,
-    title TEXT NOT NULL,
-    year INTEGER,
-    FOREIGN KEY (artist_id) REFERENCES artists(id)
-);
-
-CREATE TABLE tracks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    album_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    duration INTEGER,
-    genre TEXT,
-    FOREIGN KEY (album_id) REFERENCES albums(id)
-);
-
-CREATE TABLE playlists (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    owner TEXT
-);
-
-CREATE TABLE playlist_tracks (
-    playlist_id INTEGER NOT NULL,
-    track_id INTEGER NOT NULL,
-    position INTEGER,
-    PRIMARY KEY (playlist_id, track_id),
-    FOREIGN KEY (playlist_id) REFERENCES playlists(id),
-    FOREIGN KEY (track_id) REFERENCES tracks(id)
-);
-
-CREATE TABLE reviews (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    album_id INTEGER NOT NULL,
-    reviewer TEXT NOT NULL,
-    rating INTEGER CHECK(rating >= 1 AND rating <= 5),
-    comment TEXT,
-    FOREIGN KEY (album_id) REFERENCES albums(id)
-);
-```
 
 Sample data: 20 artists, 20 albums, 38+ tracks, playlists, reviews, etc.
 
