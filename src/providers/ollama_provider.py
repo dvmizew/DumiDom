@@ -9,12 +9,16 @@ except Exception:
     ollama = None
 
 class OllamaProvider(Provider):
-    name = "ollama"
-
-    def __init__(self):
+    def __init__(self, name="ollama", model_env=None, default_model=None, model=None):
+        self.name = name
         if ollama is None:
-            raise RuntimeError("Ollama provider: package not available")
-        self.model = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+            raise RuntimeError(f"Ollama provider '{name}': package not available")
+        if model:
+            self.model = model
+        elif model_env:
+            self.model = os.environ.get(model_env, default_model)
+        else:
+            self.model = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
 
     def generate_sql(self, question, schema_context):
         prompt = build_sql_prompt(schema_context, question)
@@ -26,7 +30,6 @@ class OllamaProvider(Provider):
                 options={"temperature": 0, "num_predict": 64},
             )
             content = "".join(chunk.get('message', {}).get('content', '') for chunk in stream).strip()
-            # unwrap ```sql fenced blocks if the model returns markdown
             fence_match = re.search(r"```(?:sql)?\\s*(.*?)```", content, re.DOTALL | re.IGNORECASE)
             if fence_match:
                 content = fence_match.group(1).strip()
@@ -39,10 +42,10 @@ class OllamaProvider(Provider):
             if not content.endswith(";"):
                 content += ";"
             if not content:
-                raise RuntimeError("Ollama provider: empty content")
+                raise RuntimeError(f"Ollama provider '{self.name}': empty content")
             return content
         except Exception as e:
-            raise RuntimeError(f"Ollama provider: {e}")
+            raise RuntimeError(f"Ollama provider '{self.name}': {e}")
 
     def summarize(self, question, rows):
         return f"Found {len(rows)} results for: {question}"

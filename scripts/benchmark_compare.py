@@ -13,10 +13,16 @@ from src.providers import PROVIDERS
 
 def run_multi_provider(dataset_path: str, default_db: str, providers: List[str], limit: int = None) -> Dict:
     """Run benchmarks across multiple providers and return aggregated results."""
+    import subprocess
     results = {}
     openai_error = None
+    ollama_model_map = {
+        "ollama-qwen": "qwen2.5:7b",
+        "ollama-phi3": "phi3:medium"
+    }
     for provider_name in providers:
-        if PROVIDERS.get(provider_name) is None:
+        prov = PROVIDERS.get(provider_name)
+        if prov is None:
             print(f"Skipping {provider_name} (not available)")
             continue
         try:
@@ -44,29 +50,15 @@ def run_multi_provider(dataset_path: str, default_db: str, providers: List[str],
                 else:
                     openai_error = msg
             results[provider_name] = error_obj
-    if openai_error:
-        print(f"\n[OPENAI ERROR] {openai_error}\n")
+        # stop Ollama model to free resources
+        model_id = ollama_model_map.get(provider_name)
+        if model_id:
+            try:
+                print(f"Stopping Ollama model: {model_id}")
+                subprocess.run(["ollama", "stop", model_id], check=False)
+            except Exception as e:
+                print(f"(Could not stop Ollama model {model_id}: {e})")
     return results
-
-
-def generate_markdown_table(results: Dict) -> str:
-    if not results:
-        return "No results."
-
-    headers = ["Provider", "EM", "EX", "Syntax Err", "Logic Err", "Exec Err"]
-    rows = []
-    for provider, m in sorted(results.items()):
-        rows.append([
-            provider,
-            f"{m['em']:.1%}",
-            f"{m['ex']:.1%}",
-            f"{m['syntax_error_rate']:.1%}",
-            f"{m['logic_error_rate']:.1%}",
-            f"{m['execution_error_rate']:.1%}"
-        ])
-    table_md = tabulate(rows, headers=headers, tablefmt="github")
-    return "# Benchmark Results\n\n" + table_md
-
 
 def print_console_table(results: Dict):
     if not results:
@@ -83,8 +75,30 @@ def print_console_table(results: Dict):
             f"{m['logic_error_rate']:.1%}",
             f"{m['execution_error_rate']:.1%}"
         ])
+        print(f"\nModel: {provider}")
+        print(f"  Exact Match (EM): {m['em']:.1%}")
+        print(f"  Execution Accuracy (EX): {m['ex']:.1%}")
+        print(f"  Syntax Errors: {m['syntax_error_rate']:.1%}")
+        print(f"  Logic Errors: {m['logic_error_rate']:.1%}")
+        print(f"  Execution Errors: {m['execution_error_rate']:.1%}")
     print(tabulate(rows, headers=headers, tablefmt="fancy_grid"))
 
+def generate_markdown_table(results: Dict) -> str:
+    if not results:
+        return "No results."
+    headers = ["Provider", "EM", "EX", "Syntax Err", "Logic Err", "Exec Err"]
+    rows = []
+    for provider, m in sorted(results.items()):
+        rows.append([
+            provider,
+            f"{m['em']:.1%}",
+            f"{m['ex']:.1%}",
+            f"{m['syntax_error_rate']:.1%}",
+            f"{m['logic_error_rate']:.1%}",
+            f"{m['execution_error_rate']:.1%}"
+        ])
+    table_md = tabulate(rows, headers=headers, tablefmt="github")
+    return "# Benchmark Results\n\n" + table_md
 
 def generate_csv_table(results: Dict) -> str:
     if not results:
@@ -102,7 +116,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run multi-provider benchmarks and generate reports")
     parser.add_argument("dataset", help="Path to Spider-like JSON file")
     parser.add_argument("--db", dest="default_db", required=True, help="Default SQLite DB path")
-    parser.add_argument("--providers", nargs="+", default=["naive"], help="Providers to benchmark (naive|openai|ollama)")
+    parser.add_argument("--providers", nargs="+", default=["naive"], help="Providers to benchmark (naive|openai|ollama-qwen|ollama-phi3)")
     parser.add_argument("--all-available", action="store_true", help="Run all available providers")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of questions")
     parser.add_argument("--output-md", dest="output_md", help="Output Markdown file")
@@ -110,9 +124,17 @@ def main():
     parser.add_argument("--output-json", dest="output_json", help="Output very detailed JSON file (all predictions, errors, etc)")
     args = parser.parse_args()
 
-    providers = args.providers
+    providers = []
+    for p in args.providers:
+        if p == "ollama" or p == "ollama-all":
+            if PROVIDERS.get("ollama-qwen") is not None:
+                providers.append("ollama-qwen")
+            if PROVIDERS.get("ollama-phi3") is not None:
+                providers.append("ollama-phi3")
+        else:
+            providers.append(p)
     if args.all_available:
-        providers = [p for p in ["naive", "openai", "ollama"] if PROVIDERS.get(p) is not None]
+        providers = [p for p in ["naive", "openai", "ollama-qwen", "ollama-phi3"] if PROVIDERS.get(p) is not None]
         print(f"Available providers: {providers}\n")
 
     results = run_multi_provider(args.dataset, args.default_db, providers, limit=args.limit)
