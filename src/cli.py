@@ -22,37 +22,29 @@ def main():
 
     load_dotenv()
     chain = TextToSQLChain()
+    sql = rows = summary = None
     try:
         sql, rows, summary = chain.run(args.question, provider_name=args.provider, db_path=args.db_path)
-    except Exception as e:
-        print(f"Error running chain: {e}")
-        raise SystemExit(1)
-
-    # if user provided correction, run that instead
-    if args.correction:
-        from src.db.sqlite_db import SQLiteDB
-        dbp = args.db_path or os.environ.get("SQLITE_DB_PATH", "data/demo_music.sqlite")
-        db = SQLiteDB(dbp)
-        try:
+        # if user provided correction, run that instead
+        if args.correction:
+            from src.db.sqlite_db import SQLiteDB
+            dbp = args.db_path or os.environ.get("SQLITE_DB_PATH", "data/demo_music.sqlite")
+            db = SQLiteDB(dbp)
             rows = db.execute(args.correction)
             sql = args.correction
             summary = f"User-corrected SQL executed. {len(rows)} rows."
-        except Exception as e:
-            print(f"\nCorrection failed: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
+        return
 
-    print("\nSQL:")
-    print(sql)
-
+    print(f"\nSQL:\n{sql}")
     if args.show_rows:
         if rows:
             print("\nResults:")
             print(tabulate(rows[:args.limit]))
         else:
             print("No rows returned")
-
-    print("\nSummary:")
-    print(summary)
-
+    print(f"\nSummary:\n{summary}")
     try:
         log_feedback(
             question=args.question,

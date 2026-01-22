@@ -6,14 +6,13 @@ class NaiveProvider(Provider):
 
     def generate_sql(self, question, schema_context):
         q = question.lower()
-        # simple regex patterns for demo_music schema
         if "how many" in q and ("tracks" in q or "songs" in q):
             return "SELECT COUNT(*) FROM tracks;"
         if "how many" in q and "albums" in q:
             return "SELECT COUNT(*) FROM albums;"
         m = re.search(r"tracks by (artist|band) (.+)", q)
         if m:
-            artist = m.group(2).strip().strip('"\'')
+            artist = m.group(2).strip(' "\'')
             return (
                 "SELECT t.name, a.title FROM tracks t "
                 "JOIN albums a ON t.album_id = a.id "
@@ -27,7 +26,6 @@ class NaiveProvider(Provider):
                 "LEFT JOIN tracks t ON t.album_id = a.id "
                 "GROUP BY a.id ORDER BY track_count DESC LIMIT 5;"
             )
-        # fallback
         return "SELECT name FROM artists LIMIT 5;"
 
     def summarize(self, question, rows):
