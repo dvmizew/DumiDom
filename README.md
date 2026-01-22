@@ -1,6 +1,7 @@
 # Text-To-SQL System
 
-Natural language to SQL conversion with multi-step validation, schema awareness, and multi-provider support.
+
+Natural language to SQL conversion with multi-step validation, schema awareness, and multi-provider support. Now features modular Ollama providers, robust benchmarking, and cross-platform compatibility.
 
 ## Overview
 
@@ -8,11 +9,15 @@ This project implements a Text-to-SQL system that converts natural language ques
 
 **Key Features:**
 - Multi-step pipeline: schema extraction → prompt building → SQL generation → validation → execution
-- Three provider implementations: Naive (regex), OpenAI (gpt-4o-mini), Ollama (qwen2.5:7b local)
+- Modular provider architecture: Naive (regex), OpenAI (gpt-4o-mini), Ollama (multiple models: phi3, qwen, codellama, starcoder, etc.)
+- Centralized provider mapping and DRY benchmarking logic
+- All Ollama models benchmarked sequentially and compared in one run
 - SQL validation: syntax check + read-only enforcement + schema validation
 - Few-shot learning with static examples for improved accuracy
-- Evaluation metrics: Exact Match (EM) and Execution Accuracy (EX)
+- Evaluation metrics: Exact Match (EM), Execution Accuracy (EX), and error breakdowns
 - Pretty console output with tabulated benchmark results
+- Robust error handling and memory management (Ollama models are unloaded after use)
+- Cross-platform: works on Linux, Windows, and in VS Code (tasks.json provided)
 
 ## Architecture
 
@@ -27,9 +32,9 @@ This project implements a Text-to-SQL system that converts natural language ques
 
 - **naive**: Simple rule-based baseline, not schema-aware.
 - **openai**: Uses OpenAI GPT models, prompt includes schema context.
-- **ollama**: Uses Ollama local LLMs, prompt includes schema context.
+- **ollama-phi3, ollama-qwen, ollama-codellama, ollama-starcoder, etc.**: Modular Ollama providers, each using a specific local LLM. Prompt includes schema context. All models are benchmarked and compared in one run.
 
-All providers now dynamically use the schema context for SQL generation. This ensures queries are tailored to the actual database schema and improves result accuracy.
+All providers now dynamically use the schema context for SQL generation. Provider selection and benchmarking are fully modular and DRY, with all Ollama models handled automatically.
 
 ## Data Model
 
@@ -87,25 +92,37 @@ make init-db
 ```bash
 make help                 # Show available commands
 make run                  # Run demo query
-make benchmark-compare    # Compare all providers
-make clean               # Clean cache files
+make benchmark-compare    # Compare all providers (naive, openai, all Ollama models)
+make clean                # Clean cache files
 ```
+
+**VS Code/Windows:**
+You can run benchmarks directly in VS Code using the provided tasks.json, or use the python command directly on Windows.
+
 
 **CLI Examples:**
 ```bash
 python -m src.cli "How many tracks?" --provider naive
-python -m src.cli "Show artists" --provider ollama
+python -m src.cli "Show artists" --provider ollama-qwen
+python -m src.cli "Show albums" --provider ollama-phi3
 ```
 
 ## Evaluation Results
 
-Latest benchmark (2026-01-22) on 17 Spider-style queries:
 
-| Provider   | EM    | EX    | Syntax Err   | Logic Err   | Exec Err   |
-|------------|-------|-------|--------------|-------------|------------|
-| naive      | 5.9%  | 11.8% | 0.0%         | 88.2%       | 0.0%       |
-| ollama     | 17.6% | 94.1% | 0.0%         | 5.9%        | 0.0%       |
-| openai     | 0.0%  | 0.0%  | 0.0%         | 0.0%        | 100.0%     |
+## Evaluation Results
+
+Latest benchmark (2026-01-22) on 17 Spider-style queries (all providers, all Ollama models):
+
+| Provider           | EM    | EX    | Syntax Err   | Logic Err   | Exec Err   |
+|--------------------|-------|-------|--------------|-------------|------------|
+| naive              | 5.9%  | 11.8% | 0.0%         | 88.2%       | 0.0%       |
+| ollama-codellama   | 5.9%  | 94.1% | 0.0%         | 5.9%        | 0.0%       |
+| ollama-phi3        | 0.0%  | 35.3% | 52.9%        | 11.8%       | 0.0%       |
+| ollama-qwen        | 17.6% | 94.1% | 0.0%         | 5.9%        | 0.0%       |
+| ollama-qwen3       | 0.0%  | 0.0%  | 100.0%       | 0.0%        | 0.0%       |
+| ollama-starcoder   | 0.0%  | 5.9%  | 88.2%        | 5.9%        | 0.0%       |
+| openai             | 0.0%  | 0.0%  | 0.0%         | 0.0%        | 100.0%     |
 
 ## Project Structure
 
@@ -139,9 +156,12 @@ DumiDom/
 │   ├── benchmark_results.md     # Latest results
 │   ├── results.csv              # CSV results
 │   └── results_details.json     # Detailed results
-## Feedback Loop
+
+## Feedback Loop & Output
 
 Feedback is logged for each query, including errors and results. See [src/feedback.py](src/feedback.py) for details. The feedback system is robust and only logs relevant entries, ensuring clarity and traceability for benchmarking and debugging.
+
+All benchmark results are saved in `benchmark_results/` as Markdown, CSV, and detailed JSON. Output logic is deduplicated and robust, with clear file naming and directory management. Memory is managed efficiently by unloading Ollama models after use.
 
 ├── Makefile                      # Build automation
 ├── requirements.txt              # Dependencies
@@ -154,7 +174,7 @@ Feedback is logged for each query, including errors and results. See [src/feedba
 - sqlglot (SQL parsing)
 - openai (OpenAI API)
 - ollama (Ollama API)
-- python-dotenv (environment config)
+- python-dotenv (environment config, optional; no longer required for Ollama)
 - tabulate (output formatting)
 - tqdm (progress bars)
 
