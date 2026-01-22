@@ -3,13 +3,12 @@ import sys
 import json
 from typing import List, Dict
 from tabulate import tabulate
+from src.eval.benchmark import run_benchmark
+from src.providers import PROVIDERS
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-
-from src.eval.benchmark import run_benchmark
-from src.providers import PROVIDERS
 
 def run_multi_provider(dataset_path: str, default_db: str, providers: List[str], limit: int = None) -> Dict:
     """Run benchmarks across multiple providers and return aggregated results."""
@@ -17,8 +16,11 @@ def run_multi_provider(dataset_path: str, default_db: str, providers: List[str],
     results = {}
     openai_error = None
     ollama_model_map = {
+        "ollama-phi3": "phi3:medium",
         "ollama-qwen": "qwen2.5:7b",
-        "ollama-phi3": "phi3:medium"
+        "ollama-qwen3": "qwen3:1.7b",
+        "ollama-codellama": "codellama:7b",
+        "ollama-starcoder": "starcoder:latest",
     }
     for provider_name in providers:
         prov = PROVIDERS.get(provider_name)
@@ -124,17 +126,23 @@ def main():
     parser.add_argument("--output-json", dest="output_json", help="Output very detailed JSON file (all predictions, errors, etc)")
     args = parser.parse_args()
 
+    all_ollama_models = [
+        "ollama-phi3",
+        "ollama-qwen",
+        "ollama-qwen3",
+        "ollama-codellama",
+        "ollama-starcoder",
+    ]
     providers = []
     for p in args.providers:
         if p == "ollama" or p == "ollama-all":
-            if PROVIDERS.get("ollama-qwen") is not None:
-                providers.append("ollama-qwen")
-            if PROVIDERS.get("ollama-phi3") is not None:
-                providers.append("ollama-phi3")
+            for m in all_ollama_models:
+                if PROVIDERS.get(m) is not None:
+                    providers.append(m)
         else:
             providers.append(p)
     if args.all_available:
-        providers = [p for p in ["naive", "openai", "ollama-qwen", "ollama-phi3"] if PROVIDERS.get(p) is not None]
+        providers = [p for p in (["naive", "openai"] + all_ollama_models) if PROVIDERS.get(p) is not None]
         print(f"Available providers: {providers}\n")
 
     results = run_multi_provider(args.dataset, args.default_db, providers, limit=args.limit)

@@ -1,4 +1,3 @@
-import os
 import re
 from .base import Provider
 from src.chain.text_to_sql import build_sql_prompt
@@ -9,16 +8,13 @@ except Exception:
     ollama = None
 
 class OllamaProvider(Provider):
-    def __init__(self, name="ollama", model_env=None, default_model=None, model=None):
+    def __init__(self, name="ollama", model=None):
         self.name = name
         if ollama is None:
             raise RuntimeError(f"Ollama provider '{name}': package not available")
-        if model:
-            self.model = model
-        elif model_env:
-            self.model = os.environ.get(model_env, default_model)
-        else:
-            self.model = os.environ.get("OLLAMA_MODEL", "qwen2.5:7b")
+        if not model:
+            raise RuntimeError(f"Ollama provider '{name}': model must be specified explicitly!")
+        self.model = model
 
     def generate_sql(self, question, schema_context):
         prompt = build_sql_prompt(schema_context, question)
