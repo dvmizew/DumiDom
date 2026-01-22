@@ -1,8 +1,22 @@
+## Environment Variables
+
+Configuration is managed via a `.env` file in the project root. Example:
+
+```
+OPENAI_API_KEY=
+OLLAMA_HOST=http://localhost:11434
+SQLITE_DB_PATH=data/demo_music.sqlite
+```
+
+- `OPENAI_API_KEY`: Required for OpenAI provider (leave blank if not used)
+- `OLLAMA_HOST`: URL for Ollama server (default: `http://localhost:11434`)
+- `SQLITE_DB_PATH`: Path to the SQLite database file
+
+The project will load these variables automatically. If you use only local providers, you do not need to set `OPENAI_API_KEY`.
 # Video Presentation
 
 The project presentation is available here: [docs/Presentation.pptx](docs/Presentation.pptx)
 
-Download and open with PowerPoint or Google Slides for details.
 # Text-To-SQL System
 
 Natural language to SQL conversion with multi-step validation, schema awareness, and multi-provider support. Now features modular Ollama providers, robust benchmarking, and cross-platform compatibility.
@@ -36,9 +50,14 @@ This project implements a Text-to-SQL system that converts natural language ques
 
 - **naive**: Simple rule-based baseline, not schema-aware.
 - **openai**: Uses OpenAI GPT models, prompt includes schema context.
-- **ollama-phi3, ollama-qwen, ollama-codellama, ollama-starcoder, etc.**: Modular Ollama providers, each using a specific local LLM. Prompt includes schema context. All models are benchmarked and compared in one run.
+- **ollama-phi3**: Local LLM (phi3:medium)
+- **ollama-qwen**: Local LLM (qwen2.5:7b)
+- **ollama-codellama**: Local LLM (codellama:7b)
+- **ollama-hrida**: Local LLM (HridaAI/hrida-t2sql-128k:latest)
+- **ollama-deepseek**: Local LLM (deepseek-coder:6.7b)
+- **ollama-duckdb**: Local LLM (duckdb-nsql:7b)
 
-All providers now dynamically use the schema context for SQL generation. Provider selection and benchmarking are fully modular and DRY, with all Ollama models handled automatically.
+All providers dynamically use the schema context for SQL generation. Provider selection and benchmarking are modular, with all Ollama models handled automatically.
 
 ## Data Model
 
@@ -48,16 +67,54 @@ Demo database (`demo_music.sqlite`):
 ![Database schema diagram](docs/dbdiagram.png)
 
 ```sql
-CREATE TABLE artists (artist_id INTEGER PRIMARY KEY, name TEXT UNIQUE);
-CREATE TABLE albums (album_id INTEGER PRIMARY KEY, title TEXT, 
-                     artist_id INTEGER, release_year INTEGER,
-                     FOREIGN KEY (artist_id) REFERENCES artists(artist_id));
-CREATE TABLE tracks (track_id INTEGER PRIMARY KEY, title TEXT, 
-                     album_id INTEGER, duration_seconds INTEGER,
-                     FOREIGN KEY (album_id) REFERENCES albums(album_id));
+CREATE TABLE artists (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE albums (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    artist_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    year INTEGER,
+    FOREIGN KEY (artist_id) REFERENCES artists(id)
+);
+
+CREATE TABLE tracks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    album_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    duration INTEGER,
+    genre TEXT,
+    FOREIGN KEY (album_id) REFERENCES albums(id)
+);
+
+CREATE TABLE playlists (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    owner TEXT
+);
+
+CREATE TABLE playlist_tracks (
+    playlist_id INTEGER NOT NULL,
+    track_id INTEGER NOT NULL,
+    position INTEGER,
+    PRIMARY KEY (playlist_id, track_id),
+    FOREIGN KEY (playlist_id) REFERENCES playlists(id),
+    FOREIGN KEY (track_id) REFERENCES tracks(id)
+);
+
+CREATE TABLE reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    album_id INTEGER NOT NULL,
+    reviewer TEXT NOT NULL,
+    rating INTEGER CHECK(rating >= 1 AND rating <= 5),
+    comment TEXT,
+    FOREIGN KEY (album_id) REFERENCES albums(id)
+);
 ```
 
-Sample data: 3 artists, 7 albums, 21 tracks.
+Sample data: 20 artists, 20 albums, 38+ tracks, playlists, reviews, etc.
 
 ## Core Implementation
 
@@ -82,7 +139,7 @@ print("Summary:", summary)
 
 ## Setup & Usage
 
-**Installation:**
+### Installation (Linux/macOS):
 ```bash
 git clone https://github.com/dvmizew/DumiDom.git
 cd DumiDom
@@ -92,15 +149,25 @@ make install
 make init-db
 ```
 
-**Commands:**
-```bash
-make help                 # Show available commands
-make run                  # Run demo query
-make benchmark-compare    # Compare all providers (naive, openai, all Ollama models)
-make clean                # Clean cache files
+### Installation (Windows):
+```powershell
+git clone https://github.com/dvmizew/DumiDom.git
+cd DumiDom
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1   # sau .venv\Scripts\activate.bat pentru cmd
+make.bat install
+make.bat init-db
 ```
 
-**CLI Examples:**
+### Usage (Windows):
+```powershell
+make.bat help                 # Show available commands
+make.bat run                  # Run demo query
+make.bat benchmark-compare    # Run benchmark on all providers
+make.bat clean                # Remove cache files and artifacts
+```
+
+### CLI Examples (universal):
 ```bash
 python -m src.cli "How many tracks?" --provider naive
 python -m src.cli "Show artists" --provider ollama-qwen
@@ -115,53 +182,49 @@ Latest benchmark (2026-01-22) on 17 Spider-style queries (all providers, all Oll
 |--------------------|-------|-------|--------------|-------------|------------|
 | naive              | 5.9%  | 11.8% | 0.0%         | 88.2%       | 0.0%       |
 | ollama-codellama   | 5.9%  | 94.1% | 0.0%         | 5.9%        | 0.0%       |
-| ollama-phi3        | 0.0%  | 35.3% | 52.9%        | 11.8%       | 0.0%       |
-| ollama-qwen        | 17.6% | 94.1% | 0.0%         | 5.9%        | 0.0%       |
-| ollama-qwen3       | 0.0%  | 0.0%  | 100.0%       | 0.0%        | 0.0%       |
-| ollama-starcoder   | 0.0%  | 5.9%  | 88.2%        | 5.9%        | 0.0%       |
+| ollama-deepseek    | 5.9%  | 88.2% | 5.9%         | 5.9%        | 0.0%       |
+| ollama-duckdb      | 5.9%  | 29.4% | 5.9%         | 64.7%       | 0.0%       |
+| ollama-hrida       | 5.9%  | 35.3% | 11.8%        | 52.9%       | 0.0%       |
+| ollama-phi3        | 5.9%  | 88.2% | 0.0%         | 11.8%       | 0.0%       |
+| ollama-qwen        | 17.6% | 100.0%| 0.0%         | 0.0%        | 0.0%       |
 | openai             | 0.0%  | 0.0%  | 0.0%         | 0.0%        | 100.0%     |
 
 ## Project Structure
 
+
 ```
-DumiDom/
-├── src/
-│   ├── cli.py                    # CLI entry point
-│   ├── chain/
-│   │   └── text_to_sql.py       # Main pipeline
-│   ├── providers/
-│   │   ├── base.py              # Provider interface
-│   │   ├── naive_provider.py    # Regex provider
-│   │   ├── openai_provider.py   # OpenAI provider
-│   │   └── ollama_provider.py   # Ollama provider
-│   ├── validation/
-│   │   └── sql_validator.py     # SQL safety checks
-│   ├── db/
-│   │   └── sqlite_db.py         # Database wrapper
-│   └── eval/
-│       └── benchmark.py         # Evaluation metrics
-├── scripts/
-│   ├── init_demo_db.py          # Database initialization
-│   ├── run_eval.py              # Evaluation script
-│   └── benchmark_compare.py     # Multi-provider benchmark
-├── data/
-│   └── demo_music.sqlite        # Demo database
-├── eval/
-│   ├── spider_sample.json       # Test queries
-│   └── feedback.jsonl           # User feedback logs
-│   ├── benchmark_results.md     # Latest results
-│   ├── results.csv              # CSV results
-│   └── results_details.json     # Detailed results
-├── Makefile                      # Build automation
-├── requirements.txt              # Dependencies
-└── README.md                     # This file
+.
+|-- Makefile                # Unix automation (build, benchmark, etc.)
+|-- make.bat                # Windows automation (mirrors Makefile targets)
+|-- requirements.txt        # Python dependencies
+|-- README.md               # Documentation
+|-- scripts/
+|   |-- benchmark_compare.py    # Main benchmarking script
+|   |-- init_demo_db.py         # Demo SQLite DB and sample data generator
+|-- src/
+|   |-- cli.py                  # CLI entry point (text-to-SQL, feedback)
+|   |-- providers/
+|   |   |-- base.py
+|   |   |-- naive_provider.py
+|   |   |-- openai_provider.py
+|   |   |-- ollama_provider.py
+|   |   |-- ollama-*.py         # Ollama LLM providers (phi3, qwen, codellama, etc.)
+|   |-- db/
+|   |   |-- sqlite_db.py
+|   |-- eval/
+|   |   |-- benchmark.py
+|   |-- validation/
+|   |   |-- sql_validator.py
+|-- data/
+|   |-- demo_music.sqlite       # Demo SQLite database
+|-- eval/
+|   |-- spider_sample.json      # Evaluation queries
+|   |-- feedback.jsonl          # User feedback for few-shot learning
+|-- benchmark_results/
+|   |-- benchmark_results.md    # Markdown summary of results
+|   |-- results.csv             # CSV results
+|   |-- results_details.json    # Detailed results
 ```
-
-## Feedback Loop & Output
-
-Feedback is logged for each query, including errors and results. See [src/feedback.py](src/feedback.py) for details. The feedback system is robust and only logs relevant entries, ensuring clarity and traceability for benchmarking and debugging.
-
-All benchmark results are saved in `benchmark_results/` as Markdown, CSV, and detailed JSON. Output logic is deduplicated and robust, with clear file naming and directory management. Memory is managed efficiently by unloading Ollama models after use.
 
 ## Dependencies
 
