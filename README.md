@@ -15,6 +15,8 @@ SQLITE_DB_PATH=data/demo_music.sqlite
 The project will load these variables automatically. If you use only local providers, you do not need to set `OPENAI_API_KEY`.
 # Video Presentation
 
+[YouTube Video](https://youtu.be/HtK9w5Sd-_4) with code execution.
+
 The project presentation is available here: [docs/Presentation.pptx](docs/Presentation.pptx)
 
 ## Overview
@@ -197,7 +199,11 @@ AI tools (GitHub Copilot, ChatGPT) were used for code generation, explanations, 
 ## References
 
 [1] OpenAI, GPT-4 Technical Report, https://openai.com/research/gpt-4
+
 [2] Yu, Tao, et al., Spider: A Large-Scale Human-Labeled Dataset for Complex and Cross-Domain Semantic Parsing and Text-to-SQL Task, EMNLP 2018, https://arxiv.org/abs/1809.08887
+
 [3] sqlglot Documentation, https://sqlglot.com
+
 [4] OpenAI, ChatGPT, https://chatgpt.com/
+
 [5] Copilot, https://copilot.microsoft.com
