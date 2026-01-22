@@ -22,37 +22,37 @@ def main():
 
     load_dotenv()
     chain = TextToSQLChain()
+    sql = rows = summary = None
     try:
         sql, rows, summary = chain.run(args.question, provider_name=args.provider, db_path=args.db_path)
-    except Exception as e:
-        print(f"Error running chain: {e}")
-        raise SystemExit(1)
-
-    # if user provided correction, run that instead
-    if args.correction:
-        from src.db.sqlite_db import SQLiteDB
-        dbp = args.db_path or os.environ.get("SQLITE_DB_PATH", "data/demo_music.sqlite")
-        db = SQLiteDB(dbp)
-        try:
+        # if user provided correction, run that instead
+        if args.correction:
+            from src.db.sqlite_db import SQLiteDB
+            dbp = args.db_path or os.environ.get("SQLITE_DB_PATH", "data/demo_music.sqlite")
+            db = SQLiteDB(dbp)
             rows = db.execute(args.correction)
             sql = args.correction
             summary = f"User-corrected SQL executed. {len(rows)} rows."
-        except Exception as e:
-            print(f"\nCorrection failed: {e}")
+    except Exception as e:
+        msg = str(e)
+        if "not available" in msg and "provider" in msg:
+            print(f"Error: Provider '{args.provider}' is not available.\nPossible fixes: check the provider name, install required dependencies, or check your .env configuration.")
+        elif "no such table" in msg or "unable to open database file" in msg or "no such file or directory" in msg:
+            print(f"Error: Database path is invalid or missing.\nPossible fixes: check --db-path, run 'make init-db', or verify the database file exists.")
+        elif "validation_failed" in msg:
+            print(f"Error: SQL validation failed.\nDetails: {msg.split(':',1)[-1].strip()}\nTry rephrasing your question or check the schema.")
+        else:
+            print(f"Error: {msg}")
+        return
 
-    print("\nSQL:")
-    print(sql)
-
+    print(f"\nSQL:\n{sql}")
     if args.show_rows:
         if rows:
             print("\nResults:")
             print(tabulate(rows[:args.limit]))
         else:
             print("No rows returned")
-
-    print("\nSummary:")
-    print(summary)
-
+    print(f"\nSummary:\n{summary}")
     try:
         log_feedback(
             question=args.question,

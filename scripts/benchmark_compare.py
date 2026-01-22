@@ -26,37 +26,24 @@ def run_multi_provider(dataset_path: str, default_db: str, providers: List[str],
         except Exception as e:
             msg = str(e)
             print(f"\n[ERROR] {provider_name} failed: {msg}\n")
-            # Detect quota exceeded for OpenAI
-            quota_msg = None
+            error_obj = {
+                "count": 0,
+                "provider": provider_name,
+                "em": 0.0,
+                "ex": 0.0,
+                "syntax_error_rate": 0.0,
+                "logic_error_rate": 0.0,
+                "execution_error_rate": 1.0,
+                "results": [],
+                "error": msg,
+            }
             if provider_name == "openai":
                 if "quota" in msg.lower() and ("exceeded" in msg.lower() or "reached" in msg.lower()):
-                    quota_msg = "OpenAI quota exceeded"
-                    openai_error = quota_msg
+                    openai_error = "OpenAI quota exceeded"
+                    error_obj["error"] = openai_error
                 else:
                     openai_error = msg
-                results[provider_name] = {
-                    "count": 0,
-                    "provider": provider_name,
-                    "em": 0.0,
-                    "ex": 0.0,
-                    "syntax_error_rate": 0.0,
-                    "logic_error_rate": 0.0,
-                    "execution_error_rate": 1.0,
-                    "results": [],
-                    "error": quota_msg if quota_msg else msg,
-                }
-            else:
-                results[provider_name] = {
-                    "count": 0,
-                    "provider": provider_name,
-                    "em": 0.0,
-                    "ex": 0.0,
-                    "syntax_error_rate": 0.0,
-                    "logic_error_rate": 0.0,
-                    "execution_error_rate": 1.0,
-                    "results": [],
-                    "error": msg,
-                }
+            results[provider_name] = error_obj
     if openai_error:
         print(f"\n[OPENAI ERROR] {openai_error}\n")
     return results
@@ -129,12 +116,10 @@ def main():
         print(f"Available providers: {providers}\n")
 
     results = run_multi_provider(args.dataset, args.default_db, providers, limit=args.limit)
-    
     md_table = generate_markdown_table(results)
     csv_table = generate_csv_table(results)
 
     print_console_table(results)
-    # save results
     out_dir = "benchmark_results"
     os.makedirs(out_dir, exist_ok=True)
     if args.output_md:
@@ -147,22 +132,17 @@ def main():
         with open(csv_path, "w", encoding="utf-8") as f:
             f.write(csv_table)
         print(f"Saved CSV to {csv_path}")
-    # save json details
+    # Save details JSON
     details_path = os.path.join(out_dir, os.path.basename(args.output_csv).replace(".csv", "_details.json")) if args.output_csv else os.path.join(out_dir, "benchmark_details.json")
     with open(details_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, default=str)
     print(f"Saved details to {details_path}")
-
-    # save very detailed results (all predictions, errors, etc) if requested
+    # Save very detailed results if requested
     if getattr(args, "output_json", None):
         detailed_path = os.path.join(out_dir, os.path.basename(args.output_json))
-        # flatten all results for all providers
-        all_details = []
-        for provider, prov_result in results.items():
-            for item in prov_result.get("results", []):
-                row = dict(item)
-                row["provider"] = provider
-                all_details.append(row)
+        all_details = [dict(item, provider=provider)
+                      for provider, prov_result in results.items()
+                      for item in prov_result.get("results", [])]
         with open(detailed_path, "w", encoding="utf-8") as f:
             json.dump(all_details, f, indent=2, ensure_ascii=False)
         print(f"Saved very detailed results to {detailed_path}")

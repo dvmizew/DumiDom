@@ -23,10 +23,13 @@ This project implements a Text-to-SQL system that converts natural language ques
 4. Validate SQL (syntax + schema checks)
 5. Execute query and summarize results
 
-**Providers:**
-- **Naive**: Regex patterns (baseline)
-- **OpenAI**: gpt-4o-mini API
-- **Ollama**: qwen2.5:7b local model with streaming support
+## Providers
+
+- **naive**: Simple rule-based baseline, not schema-aware.
+- **openai**: Uses OpenAI GPT models, prompt includes schema context.
+- **ollama**: Uses Ollama local LLMs, prompt includes schema context.
+
+All providers now dynamically use the schema context for SQL generation. This ensures queries are tailored to the actual database schema and improves result accuracy.
 
 ## Data Model
 
@@ -51,15 +54,16 @@ Sample data: 3 artists, 7 albums, 21 tracks.
 
 **TextToSQLChain** (`src/chain/text_to_sql.py`):
 ```python
-class TextToSQLChain:
-    def run(self, question: str, provider_name: str = "naive") -> dict:
-        schema = self.db.describe_schema()
-        sql = self.provider.generate_sql(question, schema)
-        is_valid, error = validate_sql(sql, schema)
-        if not is_valid:
-            return {"error": error}
-        rows = self.db.execute(sql)
-        return {"sql": sql, "rows": rows}
+from src.chain.text_to_sql import TextToSQLChain
+chain = TextToSQLChain()
+sql, rows, summary = chain.run(
+    "How many tracks?",
+    provider_name="ollama",  # or "openai", "naive"
+    db_path="data/demo_music.sqlite"
+)
+print("SQL:", sql)
+print("Results:", rows)
+print("Summary:", summary)
 ```
 
 **SQL Validation** (`src/validation/sql_validator.py`):
@@ -95,15 +99,13 @@ python -m src.cli "Show artists" --provider ollama
 
 ## Evaluation Results
 
-Latest benchmark on 17 Spider-style queries (qwen2.5:7b with enhanced prompts):
+Latest benchmark (2026-01-22) on 17 Spider-style queries:
 
-| Provider | EM    | EX     | Syntax Err | Logic Err | Exec Err |
-|----------|-------|--------|------------|-----------|----------|
-| Naive    | 5.9%  | 5.9%   | 5.9%       | 88.2%     | 0.0%     |
-| Ollama   | 41.2% | 100.0% | 0.0%       | 0.0%      | 0.0%     |
-| OpenAI   | 0.0%  | 0.0%   | 0.0%       | 0.0%      | 100.0%   |
-
-Results: `eval/results.csv`, Details: `eval/results_details.json`, Report: `docs/benchmark_results.md`
+| Provider   | EM    | EX    | Syntax Err   | Logic Err   | Exec Err   |
+|------------|-------|-------|--------------|-------------|------------|
+| naive      | 5.9%  | 11.8% | 0.0%         | 88.2%       | 0.0%       |
+| ollama     | 17.6% | 94.1% | 0.0%         | 5.9%        | 0.0%       |
+| openai     | 0.0%  | 0.0%  | 0.0%         | 0.0%        | 100.0%     |
 
 ## Project Structure
 
@@ -112,8 +114,7 @@ DumiDom/
 ├── src/
 │   ├── cli.py                    # CLI entry point
 │   ├── chain/
-│   │   ├── text_to_sql.py       # Main pipeline
-│   │   └── prompting.py         # Prompt building
+│   │   └── text_to_sql.py       # Main pipeline
 │   ├── providers/
 │   │   ├── base.py              # Provider interface
 │   │   ├── naive_provider.py    # Regex provider
@@ -134,8 +135,14 @@ DumiDom/
 ├── eval/
 │   ├── spider_sample.json       # Test queries
 │   └── feedback.jsonl           # User feedback logs
-├── docs/
-│   └── benchmark_results.md     # Latest results
+├── benchmark_results/
+│   ├── benchmark_results.md     # Latest results
+│   ├── results.csv              # CSV results
+│   └── results_details.json     # Detailed results
+## Feedback Loop
+
+Feedback is logged for each query, including errors and results. See [src/feedback.py](src/feedback.py) for details. The feedback system is robust and only logs relevant entries, ensuring clarity and traceability for benchmarking and debugging.
+
 ├── Makefile                      # Build automation
 ├── requirements.txt              # Dependencies
 └── README.md                     # This file
