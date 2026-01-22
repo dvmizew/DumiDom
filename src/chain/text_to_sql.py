@@ -71,7 +71,10 @@ class TextToSQLChain:
         tables = db.tables()
         ProviderCls = PROVIDERS.get(provider_name)
         if not ProviderCls:
-            raise RuntimeError(f"Provider '{provider_name}' not available")
+            raise RuntimeError(
+                f"Provider '{provider_name}' not available. "
+                "Possible fixes: check the provider name, install required dependencies, or check your .env configuration."
+            )
         provider = ProviderCls()
 
         last_error = None
