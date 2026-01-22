@@ -23,10 +23,13 @@ This project implements a Text-to-SQL system that converts natural language ques
 4. Validate SQL (syntax + schema checks)
 5. Execute query and summarize results
 
-**Providers:**
-- **Naive**: Regex patterns (baseline)
-- **OpenAI**: gpt-4o-mini API
-- **Ollama**: qwen2.5:7b local model with streaming support
+## Providers
+
+- **naive**: Simple rule-based baseline, not schema-aware.
+- **openai**: Uses OpenAI GPT models, prompt includes schema context.
+- **ollama**: Uses Ollama local LLMs, prompt includes schema context.
+
+All providers now dynamically use the schema context for SQL generation. This ensures queries are tailored to the actual database schema and improves result accuracy.
 
 ## Data Model
 
@@ -96,15 +99,13 @@ python -m src.cli "Show artists" --provider ollama
 
 ## Evaluation Results
 
-Latest benchmark on 17 Spider-style queries (qwen2.5:7b with enhanced prompts):
+Latest benchmark (2026-01-22) on 17 Spider-style queries:
 
-| Provider | EM    | EX     | Syntax Err | Logic Err | Exec Err |
-|----------|-------|--------|------------|-----------|----------|
-| Naive    | 5.9%  | 5.9%   | 5.9%       | 88.2%     | 0.0%     |
-| Ollama   | 35.3% | 100.0% | 0.0%       | 0.0%      | 0.0%     |
-| OpenAI   | 0.0%  | 0.0%   | 0.0%       | 0.0%      | 100.0%   |
-
-Results: `benchmark_results/results.csv`, Details: `benchmark_results/results_details.json`, Report: `benchmark_results/benchmark_results.md`
+| Provider   | EM    | EX    | Syntax Err   | Logic Err   | Exec Err   |
+|------------|-------|-------|--------------|-------------|------------|
+| naive      | 5.9%  | 11.8% | 0.0%         | 88.2%       | 0.0%       |
+| ollama     | 17.6% | 94.1% | 0.0%         | 5.9%        | 0.0%       |
+| openai     | 0.0%  | 0.0%  | 0.0%         | 0.0%        | 100.0%     |
 
 ## Project Structure
 
@@ -140,7 +141,8 @@ DumiDom/
 │   └── results_details.json     # Detailed results
 ## Feedback Loop
 
-User feedback and corrections are logged and used as few-shot examples in the prompt for future queries. This helps the system learn from user corrections and improve SQL generation over time.
+Feedback is logged for each query, including errors and results. See [src/feedback.py](src/feedback.py) for details. The feedback system is robust and only logs relevant entries, ensuring clarity and traceability for benchmarking and debugging.
+
 ├── Makefile                      # Build automation
 ├── requirements.txt              # Dependencies
 └── README.md                     # This file
