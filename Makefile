@@ -20,7 +20,7 @@ run:
 	$(PYTHON) -m src.cli "How many tracks are there?" --provider naive
 
 benchmark-compare:
-	$(PYTHON) scripts/benchmark_compare.py eval/spider_sample.json --db data/demo_music.sqlite --providers naive openai ollama --output-md docs/benchmark_results.md --output-csv eval/results.csv
+	$(PYTHON) -m scripts.benchmark_compare eval/spider_sample.json --db data/demo_music.sqlite --providers naive openai ollama --output-md docs/benchmark_results.md --output-csv eval/results.csv
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
